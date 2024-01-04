@@ -10,13 +10,13 @@ import reactor.core.publisher.Mono;
 
 public class AbstractContext implements Context {
     final String name;
-    final DefaultPipeline pipeline;
+    final Pipeline pipeline;
     final Stage stage;
 
     volatile AbstractContext prev;
     volatile AbstractContext next;
 
-    public AbstractContext(String name, DefaultPipeline pipeline, Stage stage) {
+    public AbstractContext(String name, Pipeline pipeline, Stage stage) {
         this.name = name;
         this.pipeline = pipeline;
         this.stage = stage;

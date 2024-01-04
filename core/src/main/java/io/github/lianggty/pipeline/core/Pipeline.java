@@ -1,5 +1,8 @@
 package io.github.lianggty.pipeline.core;
 
+import io.github.lianggty.pipeline.core.def.Dependency;
+import io.vavr.collection.List;
+import io.vavr.collection.Map;
 import io.vavr.control.Option;
 import reactor.core.publisher.Mono;
 
@@ -22,4 +25,10 @@ public interface Pipeline {
     Request originalRequest();
 
     Mono<Result> startCalc();
+
+    void recordDependencies(Object source, Object target);
+
+    List<Stage> stages();
+
+    Dependency dependency();
 }

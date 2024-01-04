@@ -1,6 +1,14 @@
 package io.github.lianggty.reactive.pipeline.example;
 
-import io.github.lianggty.reactive.pipeline.example.stage.ProcessUserStage;
+import static guru.nidi.graphviz.model.Factory.graph;
+import static guru.nidi.graphviz.model.Factory.node;
+import static guru.nidi.graphviz.model.Link.to;
+
+import io.github.lianggty.pipeline.core.Pipeline;
+import io.github.lianggty.reactive.pipeline.example.stage.StageA;
+
+import io.github.lianggty.reactive.pipeline.example.stage.StageB;
+import io.github.lianggty.reactive.pipeline.example.stage.StageC;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -22,10 +30,14 @@ public class Application implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        Result block = new DefaultPipeline("example", new UserRequest(List.ofAll(1L, 2L, 3L)), new UserResult())
-                .addLast(new ProcessUserStage())
-                .startCalc()
-                .block();
+        Pipeline pipeline =
+                new DefaultPipeline("example", new UserRequest(List.ofAll(1L, 2L, 3L)), new LongResult(), true)
+                        .addLast(new StageA())
+                        .addLast(new StageB())
+                        .addLast(new StageC());
+        Result block = pipeline.startCalc().block();
+        System.out.printf(block.toString());
+        pipeline.dependency().draw();
     }
 
     static class UserRequest implements Request {

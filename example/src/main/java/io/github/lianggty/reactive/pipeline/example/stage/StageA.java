@@ -4,7 +4,8 @@ import io.github.lianggty.pipeline.core.Context;
 import io.github.lianggty.pipeline.core.Request;
 import io.github.lianggty.pipeline.core.Result;
 import io.github.lianggty.pipeline.core.Stage;
-import io.github.lianggty.reactive.pipeline.example.loader.UserDataLoader;
+import io.github.lianggty.reactive.pipeline.example.LongResult;
+import io.github.lianggty.reactive.pipeline.example.loader.DataLoadA;
 
 import io.vavr.collection.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -12,24 +13,25 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Slf4j
-public class ProcessUserStage implements Stage {
+public class StageA implements Stage {
 
-    private UserDataLoader userDataLoader;
+    private DataLoadA dataLoadA;
 
     @Override
     public void pipelineInit(Context ctx) {
-        this.userDataLoader = ctx.getBean(UserDataLoader.class);
-        userDataLoader.addNeedLoadUserId(Flux.just(1L, 2L, 3L, 4L));
+        this.dataLoadA = ctx.getBean(DataLoadA.class);
+
         ctx.fireInit();
     }
 
     @Override
     public Mono<Result> execute(Context ctx, Request req, Result result) {
+        return dataLoadA.flatMap(it -> {
+            log.info("stageA get result: {}", it);
 
-        Map<Long, UserDataLoader.User> userMap = userDataLoader.get();
+            result.cast(LongResult.class).setStageARes(it);
 
-        log.info("getUser: {}", userMap.size());
-
-        return ctx.fireInvoke(req, result);
+            return ctx.fireInvoke(req, result);
+        });
     }
 }
