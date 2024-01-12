@@ -10,6 +10,7 @@ import io.github.lianggty.pipeline.core.PipelineContext;
 import io.github.lianggty.pipeline.core.Request;
 import io.github.lianggty.pipeline.core.Result;
 
+import io.vavr.collection.HashMap;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.control.Option;
@@ -31,51 +32,31 @@ public class DefaultPipeline implements Pipeline, Invoker {
     final Result emptyResult;
 
     final PipelineContext beanContext;
+    final boolean recordDependencies;
 
+    final Dependency dependency = new Dependency(this);
 
     public DefaultPipeline(String name, Request originalReq, Result emptyResult) {
+        this(name, originalReq, emptyResult, false);
+    }
+
+    public DefaultPipeline(String name, Request originalReq, Result emptyResult, boolean recordDependencies) {
         this.name = name;
         this.originalReq = originalReq;
         this.emptyResult = emptyResult;
+        this.recordDependencies = recordDependencies;
 
         this.head = new HeadContext(this);
         this.tail = new TailContext(this);
 
         head.next = tail;
         tail.prev = head;
-        this.beanContext = PipelineContextFactory.newPipelineContext(this);
+        this.beanContext = PipelineContextFactory.newPipelineContext(this, recordDependencies);
     }
 
-//    public DefaultPipeline(String name, Request originalReq, Result emptyResult, Pipeline parent) {
-//        this.name = name;
-//        this.originalReq = originalReq;
-//        this.emptyResult = emptyResult;
-//
-//        this.head = new HeadContext(this);
-//        this.tail = new TailContext(this);
-//
-//        head.next = tail;
-//        tail.prev = head;
-//        this.beanContext = new PipelineContext() {
-//            @Override
-//            public <T> T registerDataLoader(Class<T> IOClass) {
-//                return parent.registerCachedIO(IOClass);
-//            }
-//
-//            @Override
-//            public List<DataLoader<?>> getAllDataLoader() {
-//                return parent.;
-//            }
-//
-//            @Override
-//            public <T> T getBean(Class<T> beanClass) {
-//                return null;
-//            }
-//        };
-//    }
-
     private AbstractContext newContext(String name, Stage stage) {
-        return new DefaultContext(name, this, stage);
+        Pipeline pipeline = recordDependencies ? new RecordDependenciesPipeline(stage, this) : this;
+        return new DefaultContext(name, pipeline, stage);
     }
 
     private void addLast0(AbstractContext newCtx) {
@@ -160,6 +141,33 @@ public class DefaultPipeline implements Pipeline, Invoker {
         return fireInvoke(originalReq, emptyResult)
                 .delaySubscription(needWaitIOMono)
                 .timeout(Duration.ofMillis(2000));
+    }
+
+    @Override
+    public synchronized void recordDependencies(Object source, Object target) {
+        dependency.recordDependencies(source, target);
+    }
+
+    @Override
+    public List<Stage> stages() {
+        if (head.next == tail) {
+            return List.empty();
+        }
+
+        AbstractContext ctx = head.next;
+
+        List<Stage> stages = List.empty();
+
+        do {
+            stages = stages.append(ctx.stage);
+        } while ((ctx = ctx.next) != tail);
+
+        return stages;
+    }
+
+    @Override
+    public Dependency dependency() {
+        return dependency;
     }
 
     @Override

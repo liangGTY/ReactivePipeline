@@ -32,6 +32,16 @@
             <artifactId>classgraph</artifactId>
             <version>4.8.138</version>
         </dependency>
+        <dependency>
+            <groupId>guru.nidi</groupId>
+            <artifactId>graphviz-java</artifactId>
+            <version>0.18.1</version>
+        </dependency>
+        <dependency>
+            <groupId>guru.nidi</groupId>
+            <artifactId>graphviz-rough</artifactId>
+            <version>0.18.1</version>
+        </dependency>
     </dependencies>
 
 </project>

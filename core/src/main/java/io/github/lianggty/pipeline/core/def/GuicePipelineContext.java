@@ -30,9 +30,9 @@ public class GuicePipelineContext implements PipelineContext {
     private final ExternalBeanContext externalBeanContext;
     private Set<Class<?>> dataLoaderList = new HashSet<>();
 
-    public GuicePipelineContext(Pipeline pipeline, ExternalBeanContext externalBeanContext) {
+    public GuicePipelineContext(Pipeline pipeline, ExternalBeanContext externalBeanContext,boolean recordDependencies) {
         this.externalBeanContext = externalBeanContext;
-        this.injector = Guice.createInjector(new Module(pipeline));
+        this.injector = Guice.createInjector(new Module(recordDependencies,pipeline));
         this.allBindings = this.injector.getAllBindings();
     }
 
@@ -45,15 +45,21 @@ public class GuicePipelineContext implements PipelineContext {
 
     public static class Module extends AbstractModule {
 
-        private Pipeline pipeline;
+        private final boolean recordDependencies;
+        private final Pipeline pipeline;
 
-        public Module(Pipeline pipeline) {
+        public Module(boolean recordDependencies, Pipeline pipeline) {
+            this.recordDependencies = recordDependencies;
             this.pipeline = pipeline;
         }
 
         @Override
         protected void configure() {
             map.forEach((clazz, matrixPipelineProviderFunction) -> {
+                Pipeline pipeline = this.pipeline;
+                if (recordDependencies) {
+                    pipeline = new RecordDependenciesPipeline(clazz.getSimpleName(), this.pipeline);
+                }
                 Provider<Object> provider = matrixPipelineProviderFunction.apply(pipeline);
                 bind(clazz).toProvider(provider).in(Singleton.class);
             });

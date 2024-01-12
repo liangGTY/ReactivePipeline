@@ -33,8 +33,8 @@ public class ReactivePipelineAutoConfiguration {
         PipelineContextFactory pipelineContextFactory = new PipelineContextFactory() {
 
             @Override
-            public PipelineContext _newPipelineContext(Pipeline pipeline) {
-                return new GuicePipelineContext(pipeline, externalBeanContext);
+            public PipelineContext _newPipelineContext(Pipeline pipeline, boolean recordDependencies) {
+                return new GuicePipelineContext(pipeline, externalBeanContext, recordDependencies);
             }
         };
 
